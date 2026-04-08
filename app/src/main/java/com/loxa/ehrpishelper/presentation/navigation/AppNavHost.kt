@@ -21,7 +21,7 @@ import androidx.navigation.compose.rememberNavController
 import com.loxa.ehrpishelper.presentation.coupon.CouponScreen
 
 @Composable
-fun AppNavHost() {
+fun AppNavHost(initialDestination: Any = CouponList) { // 파라미터 추가
     val navController: NavHostController = rememberNavController()
     val backStackEntry by navController.currentBackStackEntryAsState()
     val currentDest = backStackEntry?.destination
@@ -33,7 +33,7 @@ fun AppNavHost() {
                     selected = currentDest?.hasRoute(CouponList::class) == true,
                     onClick = {
                         navController.navigate(CouponList) {
-                            popUpTo(CouponList) { inclusive = true }
+                            popUpTo(navController.graph.startDestinationId) { inclusive = false }
                             launchSingleTop = true
                         }
                     },
@@ -44,7 +44,7 @@ fun AppNavHost() {
                     selected = currentDest?.hasRoute(CharacterList::class) == true,
                     onClick = {
                         navController.navigate(CharacterList) {
-                            popUpTo(CouponList)
+                            popUpTo(navController.graph.startDestinationId)
                             launchSingleTop = true
                         }
                     },
@@ -56,14 +56,13 @@ fun AppNavHost() {
     ) { innerPadding ->
         NavHost(
             navController = navController,
-            startDestination = CouponList,
+            startDestination = initialDestination, // 주입받은 목적지 사용
             modifier = Modifier.padding(innerPadding)
         ) {
             composable<CouponList> {
                 CouponScreen()
             }
             composable<CharacterList> {
-                // TODO: 캐릭터 화면 (추후 구현)
                 androidx.compose.foundation.layout.Box(
                     modifier = Modifier.padding(innerPadding),
                     contentAlignment = androidx.compose.ui.Alignment.Center
