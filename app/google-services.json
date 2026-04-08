@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "859046443087",
+    "project_id": "ehrpis-push",
+    "storage_bucket": "ehrpis-push.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:859046443087:android:51bd81ad11231c40c7923a",
+        "android_client_info": {
+          "package_name": "com.loxa.ehrpishelper"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDn5del1XLVrawmn-cDMds_xmrVoqM2SGk"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
