@@ -11,6 +11,7 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.navigation.NavDestination.Companion.hasRoute
 import androidx.navigation.NavHostController
@@ -65,7 +66,7 @@ fun AppNavHost(initialDestination: Any = CouponList) { // 파라미터 추가
             composable<CharacterList> {
                 androidx.compose.foundation.layout.Box(
                     modifier = Modifier.padding(innerPadding),
-                    contentAlignment = androidx.compose.ui.Alignment.Center
+                    contentAlignment = Alignment.Center
                 ) {
                     Text("캐릭터 정보 (준비 중)")
                 }
