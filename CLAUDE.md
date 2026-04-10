@@ -2,29 +2,62 @@
 
 ## 프로젝트 개요
 에르피스(Ehrpis) 모바일 게임 헬퍼 앱.
-**현재 작업: 쿠폰 알리미 안드로이드 앱 UI 구현**
 
 ## 앱 기본 정보
 - 패키지명: `com.loxa.ehrpishelper`
 - 레포: Ehrpis-helper-backend (백엔드), 안드로이드 레포 별도
 - 언어: Kotlin + Jetpack Compose
-- 최소 SDK: 26
+- 최소 SDK: 26, compileSdk: 36
+
+## 아키텍처
+Clean Architecture + Hilt DI
+
+```
+presentation/
+  coupon/
+    CouponScreen.kt       // 쿠폰 목록 UI (완성)
+    CouponViewModel.kt    // CouponUiState (Loading/Success/Error)
+  navigation/
+    AppNavHost.kt         // Scaffold + NavHost
+    Routes.kt             // CouponList, CharacterList (kotlinx.serialization)
+domain/
+  model/Coupon.kt
+  repository/CouponRepository.kt, UsedCouponRepository.kt
+  usecase/
+    GetCouponsUseCase.kt
+    GetUsedCodesUseCase.kt
+    ToggleCouponUsageUseCase.kt
+data/
+  repository/
+    CouponRepositoryImpl.kt    // Firestore 실시간 구독 (callbackFlow)
+    UsedCouponRepositoryImpl.kt
+  local/
+    dao/UsedCouponDao.kt
+    db/AppDatabase.kt
+    entity/UsedCouponCodeEntity.kt
+di/
+  DatabaseModule.kt, FirebaseModule.kt, RepositoryModule.kt
+fcm/EhrpisMessagingService.kt
+```
 
 ## 완료된 것
-- Firebase 프로젝트: `ehrpis-push`
-- FCM 토픽 구독: `coupons` 토픽 구독 완료
-- 푸시 알림 수신 확인 완료
-- 알림 권한 요청 (Android 13+) 구현
-- jsDelivr CDN에서 캐릭터 JSON 수신 확인 (Retrofit)
+- Clean Architecture 구조 + Hilt DI
+- Firebase FCM 토픽 구독 (`coupons`), EhrpisMessagingService
+- 알림 권한 요청 (Android 13+)
+- 알림 클릭 → 쿠폰 목록 화면 이동 (Intent route 파싱)
+- Firestore 쿠폰 목록 실시간 구독
+- Room DB로 사용한 쿠폰 코드 로컬 저장
+- CouponScreen 완성:
+  - 섹션 분리: 유효 미사용 → 만료 미사용 → 사용 완료
+  - 쿠폰 코드 탭 → 클립보드 복사
+  - 만료/사용 쿠폰 흐리게 + 취소선 표시
+  - 사용 여부 체크/해제 (ToggleCouponUsage)
 
-## 현재 MainActivity.kt 상태
-```kotlin
-class MainActivity : ComponentActivity() {
-  // 알림 권한 요청 launcher 있음
-  // FCM coupons 토픽 구독 완료
-  // CouponScreen() - 현재 텍스트만 표시
-}
-```
+## 다음에 할 것
+1. 바텀 네비게이션 추가 (현재 AppNavHost에 바텀바 없음)
+2. 캐릭터 목록 화면 (CDN에서 index.json 로드)
+3. 캐릭터 상세 화면
+4. 딜 계산기
 
 ## FCM Data Payload 구조
 ```json
@@ -58,30 +91,34 @@ notified: bool
 - 개별 캐릭터: `data/characters/{gamekee_id}.json`
 - 공통 코드: `data/common/classes.json`, `elements.json`, `roles.json`, `badges.json`
 
-## 의존성 (현재 추가된 것)
+## 의존성
 ```kotlin
+// Firebase
 implementation(platform("com.google.firebase:firebase-bom:34.11.0"))
 implementation("com.google.firebase:firebase-messaging")
 implementation("com.google.firebase:firebase-firestore")
+
+// Retrofit
 implementation("com.squareup.retrofit2:retrofit:2.9.0")
 implementation("com.squareup.retrofit2:converter-gson:2.9.0")
+
+// Hilt
+implementation(libs.hilt.android)
+ksp(libs.hilt.compiler)
+implementation(libs.hilt.navigation.compose)
+
+// Navigation + Serialization
+implementation(libs.navigation.compose)
+implementation(libs.kotlinx.serialization.json)
+
+// Coil (이미지 로딩)
+implementation(libs.coil.compose)
+
+// Room
+implementation(libs.room.runtime)
+implementation(libs.room.ktx)
+ksp(libs.room.compiler)
 ```
-
-## 앱 구조 계획
-- 바텀 네비게이션 2탭: 쿠폰 목록 / 캐릭터 정보
-- 쿠폰 목록 화면:
-  - Firestore에서 쿠폰 목록 실시간 구독
-  - 쿠폰 코드 탭하면 클립보드 복사
-  - 만료된 쿠폰 흐리게 표시
-  - 알림 클릭 시 쿠폰 목록 화면으로 이동
-- 캐릭터 정보 화면: (추후 구현)
-
-## 지금 당장 할 것
-1. FirebaseMessagingService 구현 (포그라운드 알림 처리)
-2. 바텀 네비게이션 구조 잡기
-3. Firestore 쿠폰 목록 화면 구현
-4. 쿠폰 코드 복사 기능
-5. 알림 클릭 → 쿠폰 목록 화면 이동
 
 ---
 
