@@ -16,7 +16,7 @@ class EhrpisMessagingService : FirebaseMessagingService() {
         val data = message.data
         if (data.isEmpty()) return
 
-        val title = message.notification?.title ?: "에르피스 헬퍼"
+        val title = message.notification?.title ?: "에르피스 도우미"
         val body = message.notification?.body ?: run {
             val coupons = data["coupons"]
             if (!coupons.isNullOrBlank()) "새 쿠폰이 등록됐습니다: $coupons" else "새 쿠폰이 등록됐습니다."
