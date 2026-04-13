@@ -53,7 +53,13 @@ fcm/EhrpisMessagingService.kt
   - 만료/사용 쿠폰 흐리게 + 취소선 표시
   - 사용 여부 체크/해제 (ToggleCouponUsage)
 
-## 다음에 할 것
+## 출시 전 남은 작업
+- [ ] 서명 키스토어 설정 (`signingConfigs`)
+- [ ] `isMinifyEnabled = true` ProGuard 활성화
+- [ ] Play Console 스토어 등록정보 (스크린샷, 설명, 피처 그래픽)
+- [x] 개인정보처리방침 URL 등록 (https://loxalovecarstone.github.io/Ehrpis-helper-backend/privacy.html)
+
+## 다음에 할 것 (출시 후)
 1. 바텀 네비게이션 추가 (현재 AppNavHost에 바텀바 없음)
 2. 캐릭터 목록 화면 (CDN에서 index.json 로드)
 3. 캐릭터 상세 화면
