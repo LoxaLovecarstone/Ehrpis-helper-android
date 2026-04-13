@@ -8,6 +8,7 @@ import com.google.firebase.messaging.FirebaseMessagingService
 import com.google.firebase.messaging.RemoteMessage
 import com.loxa.ehrpishelper.EhrpisApplication.Companion.CHANNEL_ID
 import com.loxa.ehrpishelper.MainActivity
+import com.loxa.ehrpishelper.R
 
 class EhrpisMessagingService : FirebaseMessagingService() {
 
@@ -35,8 +36,11 @@ class EhrpisMessagingService : FirebaseMessagingService() {
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
         )
 
+        val largeBitmap = android.graphics.BitmapFactory.decodeResource(resources, R.mipmap.ic_launcher)
+
         val notification = NotificationCompat.Builder(this, CHANNEL_ID)
-            .setSmallIcon(android.R.drawable.ic_dialog_info)
+            .setSmallIcon(R.mipmap.ic_launcher)
+            .setLargeIcon(largeBitmap)
             .setContentTitle(title)
             .setContentText(body)
             // 아래 설정을 추가해야 포그라운드에서도 헤드업이 뜰 확률이 높아짐

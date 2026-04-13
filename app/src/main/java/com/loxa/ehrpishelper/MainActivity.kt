@@ -28,6 +28,8 @@ class MainActivity : ComponentActivity() {
 
         FirebaseMessaging.getInstance().subscribeToTopic("coupons")
             .addOnCompleteListener { /* 구독 로직 */ }
+        FirebaseMessaging.getInstance().subscribeToTopic("test")
+            .addOnCompleteListener { /* 테스트 알림용 */ }
 
         setContent {
             EhrpisHelperTheme {
