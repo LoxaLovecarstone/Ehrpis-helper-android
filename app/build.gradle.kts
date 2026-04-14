@@ -1,3 +1,11 @@
+import java.util.Properties
+
+val keystoreProperties = Properties()
+val keystorePropertiesFile = rootProject.file("keystore.properties")
+if (keystorePropertiesFile.exists()) {
+    keystoreProperties.load(keystorePropertiesFile.inputStream())
+}
+
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.android)
@@ -13,6 +21,15 @@ android {
     namespace = "com.loxa.ehrpishelper"
     compileSdk = 36
 
+    signingConfigs {
+        create("release") {
+            storeFile = rootProject.file(keystoreProperties["storeFile"] as String)
+            storePassword = keystoreProperties["storePassword"] as String
+            keyAlias = keystoreProperties["keyAlias"] as String
+            keyPassword = keystoreProperties["keyPassword"] as String
+        }
+    }
+
     defaultConfig {
         applicationId = "com.loxa.ehrpishelper"
         minSdk = 26
@@ -25,11 +42,12 @@ android {
 
     buildTypes {
         release {
-            isMinifyEnabled = false
+            isMinifyEnabled = true
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"
             )
+            signingConfig = signingConfigs.getByName("release")
         }
     }
     compileOptions {
