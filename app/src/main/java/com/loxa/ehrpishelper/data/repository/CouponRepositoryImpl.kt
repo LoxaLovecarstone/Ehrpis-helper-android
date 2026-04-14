@@ -28,8 +28,8 @@ class CouponRepositoryImpl @Inject constructor(
 
                 val coupons = snapshot.documents.mapNotNull { doc ->
                     runCatching {
-                        val expiryEnd = doc.getString("expiry_end") ?: return@mapNotNull null
-                        val isExpired = try {
+                        val expiryEnd = doc.getString("expiry_end") ?: ""
+                        val isExpired = if (expiryEnd.isEmpty()) false else try {
                             LocalDateTime.parse(expiryEnd, formatter).isBefore(now)
                         } catch (e: Exception) {
                             false

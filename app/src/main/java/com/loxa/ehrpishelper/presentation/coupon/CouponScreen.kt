@@ -225,7 +225,7 @@ private fun CouponCard(
 
         Spacer(Modifier.height(4.dp))
         Text(
-            text = "~${coupon.expiryEnd}",
+            text = if (coupon.expiryEnd.isEmpty()) "만료일 알 수 없음" else "~${coupon.expiryEnd}",
             fontSize = 12.sp,
             color = contentColor.copy(alpha = 0.7f),
             textDecoration = strikethrough
