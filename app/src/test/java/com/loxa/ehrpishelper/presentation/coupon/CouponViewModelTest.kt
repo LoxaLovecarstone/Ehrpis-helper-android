@@ -150,6 +150,37 @@ class CouponViewModelTest {
     }
 
     @Test
+    fun `만료일이 없는 쿠폰(expiryEnd 빈 문자열)은 유효 쿠폰 섹션에 분류된다`() = runTest {
+        // Firestore의 expiry_end 필드가 null이면 CouponRepositoryImpl에서 ""로 매핑하고
+        // isExpired = false로 처리한다. ViewModel도 이를 만료되지 않은 쿠폰으로 분류해야 한다.
+        val unknownExpiryCoupon = Coupon(
+            feedId = 3,
+            title = "만료일 미정 쿠폰",
+            codes = listOf("UNKNOWN1"),
+            expiryStart = "",
+            expiryEnd = "",
+            link = "https://example.com",
+            createdDate = "2026-04-01",
+            isExpired = false
+        )
+        val viewModel = createViewModel()
+
+        viewModel.uiState.test {
+            awaitItem() // Loading
+
+            couponsFlow.value = listOf(unknownExpiryCoupon)
+            testDispatcher.scheduler.advanceUntilIdle()
+
+            val state = awaitItem() as CouponUiState.Success
+            assertEquals(listOf(unknownExpiryCoupon), state.activeCoupons)
+            assertTrue(state.expiredCoupons.isEmpty())
+            assertTrue(state.usedCoupons.isEmpty())
+
+            cancelAndIgnoreRemainingEvents()
+        }
+    }
+
+    @Test
     fun `toggleUsage 호출 시 UseCase에 올바른 인자가 전달된다`() = runTest {
         coJustRun { toggleCouponUsageUseCase(any(), any()) }
         val viewModel = createViewModel()
