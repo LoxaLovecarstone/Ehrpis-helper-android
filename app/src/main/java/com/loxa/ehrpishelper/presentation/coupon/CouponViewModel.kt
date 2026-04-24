@@ -13,6 +13,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
@@ -39,6 +40,7 @@ class CouponViewModel @Inject constructor(
     val uiState: StateFlow<CouponUiState> = _uiState.asStateFlow()
 
     private val _selectedFilter = MutableStateFlow(CouponFilter.ALL)
+    private val _selectedRewardTypes = MutableStateFlow<Set<RewardType>>(emptySet())
 
     init {
         viewModelScope.launch {
@@ -46,17 +48,23 @@ class CouponViewModel @Inject constructor(
                 combine(
                     getCouponsUseCase(),
                     getUsedCodesUseCase(),
-                    _selectedFilter
-                ) { coupons, usedCodes, filter ->
+                    _selectedFilter,
+                    _selectedRewardTypes,
+                ) { coupons, usedCodes, filter, rewardTypes ->
                     fun Coupon.allUsed() = codes.isNotEmpty() && codes.all { it in usedCodes }
 
-                    val (used, active) = coupons.partition { it.allUsed() }
+                    val rewardFiltered = if (rewardTypes.isEmpty()) coupons
+                    else coupons.filter { coupon ->
+                        rewardTypes.any { it.firestoreValue in coupon.rewardTypes }
+                    }
+                    val (used, active) = rewardFiltered.partition { it.allUsed() }
 
                     CouponUiState.Success(
                         activeCoupons = active.sortedBy { it.expiryEnd.toExpiryDateTime() },
                         usedCoupons = used.sortedBy { it.expiryEnd.toExpiryDateTime() },
                         usedCodes = usedCodes,
-                        selectedFilter = filter
+                        selectedFilter = filter,
+                        selectedRewardTypes = rewardTypes,
                     )
                 }.collect { _uiState.value = it }
             }.onFailure { e ->
@@ -67,6 +75,16 @@ class CouponViewModel @Inject constructor(
 
     fun setFilter(filter: CouponFilter) {
         _selectedFilter.value = filter
+    }
+
+    fun toggleRewardType(type: RewardType?) {
+        _selectedRewardTypes.update { current ->
+            when {
+                type == null -> emptySet()
+                type in current -> current - type
+                else -> current + type
+            }
+        }
     }
 
     fun clearAllUsed() {

@@ -56,6 +56,7 @@ class CouponRepositoryImpl @Inject constructor(
                             link = doc.getString("link") ?: "",
                             createdDate = doc.getString("created_date") ?: "",
                             isNew = isNew,
+                            rewardTypes = (doc.get("reward_types") as? List<String>) ?: emptyList(),
                         )
                     }.getOrNull()
                 }

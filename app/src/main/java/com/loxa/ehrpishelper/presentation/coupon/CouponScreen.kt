@@ -117,7 +117,9 @@ fun CouponScreen(
                     CouponTopAppBar(onClearAllUsed = { viewModel.clearAllUsed() })
                     CouponFilterChips(
                         selectedFilter = state.selectedFilter,
-                        onFilterSelected = viewModel::setFilter,
+                        onFilterSelected = { viewModel.setFilter(it) },
+                        selectedRewardTypes = state.selectedRewardTypes,
+                        onRewardTypeToggled = { viewModel.toggleRewardType(it) },
                         modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)
                     )
 
@@ -227,23 +229,57 @@ private fun CouponTopAppBar(onClearAllUsed: () -> Unit) {
 private fun CouponFilterChips(
     selectedFilter: CouponFilter,
     onFilterSelected: (CouponFilter) -> Unit,
+    selectedRewardTypes: Set<RewardType>,
+    onRewardTypeToggled: (RewardType?) -> Unit,
     modifier: Modifier = Modifier
 ) {
-    val filters = listOf(
+    val statusFilters = listOf(
         CouponFilter.ALL to "전체",
         CouponFilter.AVAILABLE to "사용 가능",
-        CouponFilter.USED to "사용완료",
+        CouponFilter.USED to "사용 완료",
     )
-    Row(
-        modifier = modifier.horizontalScroll(rememberScrollState()),
-        horizontalArrangement = Arrangement.spacedBy(8.dp)
-    ) {
-        filters.forEach { (filter, label) ->
+    Column(modifier = modifier) {
+        Text(
+            text = "상태",
+            fontSize = 11.sp,
+            color = Color.Gray,
+            modifier = Modifier.padding(start = 4.dp, bottom = 2.dp)
+        )
+        Row(
+            modifier = Modifier.horizontalScroll(rememberScrollState()),
+            horizontalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            statusFilters.forEach { (filter, label) ->
+                FilterChip(
+                    selected = selectedFilter == filter,
+                    onClick = { onFilterSelected(filter) },
+                    label = { Text(label) }
+                )
+            }
+        }
+        Spacer(Modifier.height(6.dp))
+        Text(
+            text = "종류",
+            fontSize = 11.sp,
+            color = Color.Gray,
+            modifier = Modifier.padding(start = 4.dp, bottom = 2.dp)
+        )
+        Row(
+            modifier = Modifier.horizontalScroll(rememberScrollState()),
+            horizontalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
             FilterChip(
-                selected = selectedFilter == filter,
-                onClick = { onFilterSelected(filter) },
-                label = { Text(label) }
+                selected = selectedRewardTypes.isEmpty(),
+                onClick = { onRewardTypeToggled(null) },
+                label = { Text("전체") }
             )
+            RewardType.entries.forEach { type ->
+                FilterChip(
+                    selected = type in selectedRewardTypes,
+                    onClick = { onRewardTypeToggled(type) },
+                    label = { Text(type.displayName) }
+                )
+            }
         }
     }
 }

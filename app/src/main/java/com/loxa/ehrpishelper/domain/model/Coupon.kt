@@ -9,4 +9,5 @@ data class Coupon(
     val link: String,
     val createdDate: String,
     val isNew: Boolean,
+    val rewardTypes: List<String> = emptyList(),
 )

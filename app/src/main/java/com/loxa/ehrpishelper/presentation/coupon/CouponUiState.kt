@@ -8,7 +8,8 @@ sealed interface CouponUiState {
         val activeCoupons: List<Coupon>,  // 유효 + 미사용
         val usedCoupons: List<Coupon>,    // 유효 + 사용완료
         val usedCodes: Set<String>,
-        val selectedFilter: CouponFilter
+        val selectedFilter: CouponFilter,
+        val selectedRewardTypes: Set<RewardType>,
     ) : CouponUiState
     data class Error(val message: String) : CouponUiState
 }
