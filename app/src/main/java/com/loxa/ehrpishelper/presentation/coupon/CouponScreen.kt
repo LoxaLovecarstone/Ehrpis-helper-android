@@ -138,13 +138,11 @@ fun CouponScreen(
                             when (state.selectedFilter) {
                                 CouponFilter.ALL -> {
                                     items(state.activeCoupons, key = { it.feedId }) { coupon ->
-                                        val isAnyCheckedInSession = coupon.codes.any { it in state.usedCodes }
                                         CouponCard(
                                             coupon = coupon,
-                                            allUsed = isAnyCheckedInSession,
                                             usedCodes = state.usedCodes,
                                             onToggleUsage = { code, isUsed -> viewModel.toggleUsage(code, isUsed) },
-                                            onCopy = if (isAnyCheckedInSession) null else copyAction
+                                            onCopy = copyAction
                                         )
                                     }
                                     if (state.usedCoupons.isNotEmpty()) {
@@ -152,10 +150,9 @@ fun CouponScreen(
                                         items(state.usedCoupons, key = { it.feedId }) { coupon ->
                                             CouponCard(
                                                 coupon = coupon,
-                                                allUsed = true,
                                                 usedCodes = state.usedCodes,
                                                 onToggleUsage = { code, isUsed -> viewModel.toggleUsage(code, isUsed) },
-                                                onCopy = null
+                                                onCopy = copyAction
                                             )
                                         }
                                     }
@@ -163,13 +160,11 @@ fun CouponScreen(
 
                                 CouponFilter.AVAILABLE -> {
                                     items(state.activeCoupons, key = { it.feedId }) { coupon ->
-                                        val isAnyCheckedInSession = coupon.codes.any { it in state.usedCodes }
                                         CouponCard(
                                             coupon = coupon,
-                                            allUsed = isAnyCheckedInSession,
                                             usedCodes = state.usedCodes,
                                             onToggleUsage = { code, isUsed -> viewModel.toggleUsage(code, isUsed) },
-                                            onCopy = if (isAnyCheckedInSession) null else copyAction
+                                            onCopy = copyAction
                                         )
                                     }
                                 }
@@ -178,10 +173,9 @@ fun CouponScreen(
                                     items(state.usedCoupons, key = { it.feedId }) { coupon ->
                                         CouponCard(
                                             coupon = coupon,
-                                            allUsed = true,
                                             usedCodes = state.usedCodes,
                                             onToggleUsage = { code, isUsed -> viewModel.toggleUsage(code, isUsed) },
-                                            onCopy = null
+                                            onCopy = copyAction
                                         )
                                     }
                                 }
@@ -190,7 +184,6 @@ fun CouponScreen(
                                     items(state.expiredCoupons, key = { it.feedId }) { coupon ->
                                         CouponCard(
                                             coupon = coupon,
-                                            allUsed = false,
                                             usedCodes = state.usedCodes,
                                             onToggleUsage = null,
                                             onCopy = null
@@ -251,14 +244,13 @@ private fun SectionDivider(label: String) {
 @Composable
 private fun CouponCard(
     coupon: Coupon,
-    allUsed: Boolean,
     usedCodes: Set<String>,
     onToggleUsage: ((code: String, isCurrentlyUsed: Boolean) -> Unit)?,
     onCopy: ((String) -> Unit)?
 ) {
-    val isAnyCodeUsedInThisSession = coupon.codes.any { it in usedCodes }
-    val isVisualDimmed = coupon.isExpired || allUsed || isAnyCodeUsedInThisSession
-    val isVisualStrikethrough = allUsed || isAnyCodeUsedInThisSession
+    val isAnyCodeUsed = coupon.codes.any { it in usedCodes }
+    val isVisualDimmed = coupon.isExpired || isAnyCodeUsed
+    val isVisualStrikethrough = coupon.isExpired || isAnyCodeUsed
 
     val strikethrough = if (isVisualStrikethrough) TextDecoration.LineThrough else TextDecoration.None
     val contentColor = if (isVisualDimmed) Color.Gray else MaterialTheme.colorScheme.onSurface
