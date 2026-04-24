@@ -29,9 +29,6 @@ class CouponViewModel @Inject constructor(
 
     private val _selectedFilter = MutableStateFlow(CouponFilter.ALL)
 
-    // 앱 실행 중 섹션 이동 방지 - 최초 로드 시 usedCodes 스냅샷으로 구분 고정
-    private var initialUsedCodes: Set<String>? = null
-
     init {
         viewModelScope.launch {
             runCatching {
@@ -40,10 +37,7 @@ class CouponViewModel @Inject constructor(
                     getUsedCodesUseCase(),
                     _selectedFilter
                 ) { coupons, usedCodes, filter ->
-                    if (initialUsedCodes == null) initialUsedCodes = usedCodes
-                    val sortingCodes = initialUsedCodes!!
-
-                    fun Coupon.allUsed() = codes.isNotEmpty() && codes.all { it in sortingCodes }
+                    fun Coupon.allUsed() = codes.isNotEmpty() && codes.all { it in usedCodes }
 
                     val (expired, active) = coupons.partition { it.isExpired }
                     val (activeUsed, activeNotUsed) = active.partition { it.allUsed() }
