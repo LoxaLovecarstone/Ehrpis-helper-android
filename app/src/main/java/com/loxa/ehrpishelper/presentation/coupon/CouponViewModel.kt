@@ -5,7 +5,8 @@ import androidx.lifecycle.viewModelScope
 import com.loxa.ehrpishelper.domain.model.Coupon
 import com.loxa.ehrpishelper.domain.usecase.GetCouponsUseCase
 import com.loxa.ehrpishelper.domain.usecase.GetUsedCodesUseCase
-import com.loxa.ehrpishelper.domain.usecase.ToggleCouponUsageUseCase
+import com.loxa.ehrpishelper.domain.usecase.MarkCouponAsUnusedUseCase
+import com.loxa.ehrpishelper.domain.usecase.MarkCouponAsUsedUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -14,28 +15,21 @@ import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
-sealed interface CouponUiState {
-    data object Loading : CouponUiState
-    data class Success(
-        val activeCoupons: List<Coupon>,
-        val expiredCoupons: List<Coupon>,
-        val usedCoupons: List<Coupon>,
-        val usedCodes: Set<String>
-    ) : CouponUiState
-    data class Error(val message: String) : CouponUiState
-}
 
 @HiltViewModel
 class CouponViewModel @Inject constructor(
     private val getCouponsUseCase: GetCouponsUseCase,
     private val getUsedCodesUseCase: GetUsedCodesUseCase,
-    private val toggleCouponUsageUseCase: ToggleCouponUsageUseCase,
+    private val markCouponAsUsedUseCase: MarkCouponAsUsedUseCase,
+    private val markCouponAsUnusedUseCase: MarkCouponAsUnusedUseCase,
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow<CouponUiState>(CouponUiState.Loading)
     val uiState: StateFlow<CouponUiState> = _uiState.asStateFlow()
 
-    // 앱 실행 중 순서 변경 방지 - 최초 로드 시 usedCodes 스냅샷으로 정렬 고정
+    private val _selectedFilter = MutableStateFlow(CouponFilter.ALL)
+
+    // 앱 실행 중 섹션 이동 방지 - 최초 로드 시 usedCodes 스냅샷으로 구분 고정
     private var initialUsedCodes: Set<String>? = null
 
     init {
@@ -43,8 +37,9 @@ class CouponViewModel @Inject constructor(
             runCatching {
                 combine(
                     getCouponsUseCase(),
-                    getUsedCodesUseCase()
-                ) { coupons, usedCodes ->
+                    getUsedCodesUseCase(),
+                    _selectedFilter
+                ) { coupons, usedCodes, filter ->
                     if (initialUsedCodes == null) initialUsedCodes = usedCodes
                     val sortingCodes = initialUsedCodes!!
 
@@ -52,14 +47,13 @@ class CouponViewModel @Inject constructor(
 
                     val (expired, active) = coupons.partition { it.isExpired }
                     val (activeUsed, activeNotUsed) = active.partition { it.allUsed() }
-                    val (expiredUsed, expiredNotUsed) = expired.partition { it.allUsed() }
 
                     CouponUiState.Success(
-                        // 유효 미사용 → 만료 미사용 → 유효 사용 → 만료 사용
                         activeCoupons = activeNotUsed,
-                        expiredCoupons = expiredNotUsed,
-                        usedCoupons = activeUsed + expiredUsed,
-                        usedCodes = usedCodes
+                        usedCoupons = activeUsed,
+                        expiredCoupons = expired,
+                        usedCodes = usedCodes,
+                        selectedFilter = filter
                     )
                 }.collect { _uiState.value = it }
             }.onFailure { e ->
@@ -68,9 +62,14 @@ class CouponViewModel @Inject constructor(
         }
     }
 
+    fun setFilter(filter: CouponFilter) {
+        _selectedFilter.value = filter
+    }
+
     fun toggleUsage(code: String, isCurrentlyUsed: Boolean) {
         viewModelScope.launch {
-            toggleCouponUsageUseCase(code, isCurrentlyUsed)
+            if (isCurrentlyUsed) markCouponAsUnusedUseCase(code)
+            else markCouponAsUsedUseCase(code)
         }
     }
 }

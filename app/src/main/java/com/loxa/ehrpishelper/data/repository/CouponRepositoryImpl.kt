@@ -7,6 +7,8 @@ import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.callbackFlow
 import java.time.LocalDateTime
+import java.time.ZoneId
+import java.time.ZonedDateTime
 import java.time.format.DateTimeFormatter
 import javax.inject.Inject
 
@@ -23,14 +25,15 @@ class CouponRepositoryImpl @Inject constructor(
                     return@addSnapshotListener
                 }
 
-                val now = LocalDateTime.now()
+                val seoulZone = ZoneId.of("Asia/Seoul")
+                val now = ZonedDateTime.now(seoulZone)
                 val formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm")
 
                 val coupons = snapshot.documents.mapNotNull { doc ->
                     runCatching {
                         val expiryEnd = doc.getString("expiry_end") ?: ""
                         val isExpired = if (expiryEnd.isEmpty()) false else try {
-                            LocalDateTime.parse(expiryEnd, formatter).isBefore(now)
+                            LocalDateTime.parse(expiryEnd, formatter).atZone(seoulZone).isBefore(now)
                         } catch (e: Exception) {
                             false
                         }

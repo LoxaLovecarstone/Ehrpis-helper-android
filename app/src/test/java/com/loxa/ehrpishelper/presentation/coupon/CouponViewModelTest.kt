@@ -4,7 +4,8 @@ import app.cash.turbine.test
 import com.loxa.ehrpishelper.domain.model.Coupon
 import com.loxa.ehrpishelper.domain.usecase.GetCouponsUseCase
 import com.loxa.ehrpishelper.domain.usecase.GetUsedCodesUseCase
-import com.loxa.ehrpishelper.domain.usecase.ToggleCouponUsageUseCase
+import com.loxa.ehrpishelper.domain.usecase.MarkCouponAsUnusedUseCase
+import com.loxa.ehrpishelper.domain.usecase.MarkCouponAsUsedUseCase
 import io.mockk.coJustRun
 import io.mockk.coVerify
 import io.mockk.every
@@ -29,7 +30,8 @@ class CouponViewModelTest {
 
     private lateinit var getCouponsUseCase: GetCouponsUseCase
     private lateinit var getUsedCodesUseCase: GetUsedCodesUseCase
-    private lateinit var toggleCouponUsageUseCase: ToggleCouponUsageUseCase
+    private lateinit var markCouponAsUsedUseCase: MarkCouponAsUsedUseCase
+    private lateinit var markCouponAsUnusedUseCase: MarkCouponAsUnusedUseCase
 
     // Flow를 직접 조작하기 위해 MutableStateFlow 사용
     private val couponsFlow = MutableStateFlow<List<Coupon>>(emptyList())
@@ -63,7 +65,8 @@ class CouponViewModelTest {
 
         getCouponsUseCase = mockk()
         getUsedCodesUseCase = mockk()
-        toggleCouponUsageUseCase = mockk()
+        markCouponAsUsedUseCase = mockk()
+        markCouponAsUnusedUseCase = mockk()
 
         every { getCouponsUseCase() } returns couponsFlow
         every { getUsedCodesUseCase() } returns usedCodesFlow
@@ -77,7 +80,8 @@ class CouponViewModelTest {
     private fun createViewModel() = CouponViewModel(
         getCouponsUseCase,
         getUsedCodesUseCase,
-        toggleCouponUsageUseCase
+        markCouponAsUsedUseCase,
+        markCouponAsUnusedUseCase
     )
 
     @Test
@@ -181,14 +185,26 @@ class CouponViewModelTest {
     }
 
     @Test
-    fun `toggleUsage 호출 시 UseCase에 올바른 인자가 전달된다`() = runTest {
-        coJustRun { toggleCouponUsageUseCase(any(), any()) }
+    fun `isCurrentlyUsed가 false면 MarkCouponAsUsedUseCase를 호출한다`() = runTest {
+        coJustRun { markCouponAsUsedUseCase(any()) }
         val viewModel = createViewModel()
         testDispatcher.scheduler.advanceUntilIdle()
 
         viewModel.toggleUsage("CODE1", isCurrentlyUsed = false)
         testDispatcher.scheduler.advanceUntilIdle()
 
-        coVerify(exactly = 1) { toggleCouponUsageUseCase("CODE1", false) }
+        coVerify(exactly = 1) { markCouponAsUsedUseCase("CODE1") }
+    }
+
+    @Test
+    fun `isCurrentlyUsed가 true면 MarkCouponAsUnusedUseCase를 호출한다`() = runTest {
+        coJustRun { markCouponAsUnusedUseCase(any()) }
+        val viewModel = createViewModel()
+        testDispatcher.scheduler.advanceUntilIdle()
+
+        viewModel.toggleUsage("CODE1", isCurrentlyUsed = true)
+        testDispatcher.scheduler.advanceUntilIdle()
+
+        coVerify(exactly = 1) { markCouponAsUnusedUseCase("CODE1") }
     }
 }
