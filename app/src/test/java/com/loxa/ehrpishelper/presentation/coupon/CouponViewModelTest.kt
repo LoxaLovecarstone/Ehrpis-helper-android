@@ -88,7 +88,6 @@ class CouponViewModelTest {
     fun `초기 상태는 Loading이다`() = runTest {
         val viewModel = createViewModel()
 
-        // 첫 emit 전 상태 확인
         assertTrue(viewModel.uiState.value is CouponUiState.Loading)
     }
 
@@ -112,8 +111,7 @@ class CouponViewModelTest {
     }
 
     @Test
-    fun `초기 로드 시 이미 모든 코드가 사용된 쿠폰은 usedCoupons 섹션에 들어간다`() = runTest {
-        // ViewModel 생성 전에 이미 사용된 상태로 세팅 → initialUsedCodes에 반영됨
+    fun `이미 모든 코드가 사용된 쿠폰은 usedCoupons 섹션에 들어간다`() = runTest {
         couponsFlow.value = listOf(activeCoupon)
         usedCodesFlow.value = setOf("CODE1", "CODE2")
 
@@ -132,29 +130,33 @@ class CouponViewModelTest {
     }
 
     @Test
-    fun `세션 중 코드를 사용해도 섹션은 유지되고 usedCodes만 업데이트된다`() = runTest {
-        // 설계 의도: 앱 실행 중 목록 순서 변경 방지 (initialUsedCodes 스냅샷 고정)
+    fun `세션 중 모든 코드를 사용하면 activeCoupons에서 usedCoupons으로 이동한다`() = runTest {
+        // 설계 의도: initialUsedCodes 고정 제거 후 라이브 usedCodes 기준으로 섹션 분류
+        // → 토글하면 즉시 섹션 이동 (리세마라 대응)
         couponsFlow.value = listOf(activeCoupon)
         val viewModel = createViewModel()
 
         viewModel.uiState.test {
             awaitItem() // Loading
-            awaitItem() // Success (유효 미사용)
+            testDispatcher.scheduler.advanceUntilIdle()
+
+            val initial = awaitItem() as CouponUiState.Success
+            assertEquals(listOf(activeCoupon), initial.activeCoupons)
+            assertTrue(initial.usedCoupons.isEmpty())
 
             usedCodesFlow.value = setOf("CODE1", "CODE2")
             testDispatcher.scheduler.advanceUntilIdle()
 
-            val state = awaitItem() as CouponUiState.Success
-            assertEquals(listOf(activeCoupon), state.activeCoupons) // 섹션 유지
-            assertTrue(state.usedCoupons.isEmpty())
-            assertEquals(setOf("CODE1", "CODE2"), state.usedCodes) // usedCodes는 업데이트
+            val updated = awaitItem() as CouponUiState.Success
+            assertTrue(updated.activeCoupons.isEmpty())
+            assertEquals(listOf(activeCoupon), updated.usedCoupons)
 
             cancelAndIgnoreRemainingEvents()
         }
     }
 
     @Test
-    fun `만료일이 없는 쿠폰(expiryEnd 빈 문자열)은 유효 쿠폰 섹션에 분류된다`() = runTest {
+    fun `만료일이 없는 쿠폰은 유효 쿠폰 섹션에 분류된다`() = runTest {
         // Firestore의 expiry_end 필드가 null이면 CouponRepositoryImpl에서 ""로 매핑하고
         // isExpired = false로 처리한다. ViewModel도 이를 만료되지 않은 쿠폰으로 분류해야 한다.
         val unknownExpiryCoupon = Coupon(
@@ -179,6 +181,65 @@ class CouponViewModelTest {
             assertEquals(listOf(unknownExpiryCoupon), state.activeCoupons)
             assertTrue(state.expiredCoupons.isEmpty())
             assertTrue(state.usedCoupons.isEmpty())
+
+            cancelAndIgnoreRemainingEvents()
+        }
+    }
+
+    @Test
+    fun `만료일이 이른 쿠폰이 먼저 정렬된다`() = runTest {
+        val earlyExpiry = activeCoupon.copy(feedId = 10, expiryEnd = "2026-04-10 23:59")
+        val lateExpiry = activeCoupon.copy(feedId = 11, expiryEnd = "2026-04-30 23:59")
+        val viewModel = createViewModel()
+
+        viewModel.uiState.test {
+            awaitItem() // Loading
+
+            couponsFlow.value = listOf(lateExpiry, earlyExpiry)
+            testDispatcher.scheduler.advanceUntilIdle()
+
+            val state = awaitItem() as CouponUiState.Success
+            assertEquals(earlyExpiry, state.activeCoupons[0])
+            assertEquals(lateExpiry, state.activeCoupons[1])
+
+            cancelAndIgnoreRemainingEvents()
+        }
+    }
+
+    @Test
+    fun `만료일이 없는 쿠폰은 정렬 시 맨 뒤에 온다`() = runTest {
+        val withExpiry = activeCoupon.copy(feedId = 10, expiryEnd = "2026-04-10 23:59")
+        val withoutExpiry = activeCoupon.copy(feedId = 11, expiryEnd = "")
+        val viewModel = createViewModel()
+
+        viewModel.uiState.test {
+            awaitItem() // Loading
+
+            couponsFlow.value = listOf(withoutExpiry, withExpiry)
+            testDispatcher.scheduler.advanceUntilIdle()
+
+            val state = awaitItem() as CouponUiState.Success
+            assertEquals(withExpiry, state.activeCoupons[0])
+            assertEquals(withoutExpiry, state.activeCoupons[1])
+
+            cancelAndIgnoreRemainingEvents()
+        }
+    }
+
+    @Test
+    fun `setFilter 호출 시 selectedFilter가 UiState에 반영된다`() = runTest {
+        val viewModel = createViewModel()
+
+        viewModel.uiState.test {
+            awaitItem() // Loading
+            testDispatcher.scheduler.advanceUntilIdle()
+            awaitItem() // Success (기본 ALL)
+
+            viewModel.setFilter(CouponFilter.AVAILABLE)
+            testDispatcher.scheduler.advanceUntilIdle()
+
+            val state = awaitItem() as CouponUiState.Success
+            assertEquals(CouponFilter.AVAILABLE, state.selectedFilter)
 
             cancelAndIgnoreRemainingEvents()
         }
