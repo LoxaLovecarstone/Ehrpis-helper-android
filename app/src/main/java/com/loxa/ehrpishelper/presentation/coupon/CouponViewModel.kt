@@ -3,6 +3,7 @@ package com.loxa.ehrpishelper.presentation.coupon
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.loxa.ehrpishelper.domain.model.Coupon
+import com.loxa.ehrpishelper.domain.usecase.ClearAllUsedCodesUseCase
 import com.loxa.ehrpishelper.domain.usecase.GetCouponsUseCase
 import com.loxa.ehrpishelper.domain.usecase.GetUsedCodesUseCase
 import com.loxa.ehrpishelper.domain.usecase.MarkCouponAsUnusedUseCase
@@ -31,6 +32,7 @@ class CouponViewModel @Inject constructor(
     private val getUsedCodesUseCase: GetUsedCodesUseCase,
     private val markCouponAsUsedUseCase: MarkCouponAsUsedUseCase,
     private val markCouponAsUnusedUseCase: MarkCouponAsUnusedUseCase,
+    private val clearAllUsedCodesUseCase: ClearAllUsedCodesUseCase,
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow<CouponUiState>(CouponUiState.Loading)
@@ -67,6 +69,10 @@ class CouponViewModel @Inject constructor(
 
     fun setFilter(filter: CouponFilter) {
         _selectedFilter.value = filter
+    }
+
+    fun clearAllUsed() {
+        viewModelScope.launch { clearAllUsedCodesUseCase() }
     }
 
     fun toggleUsage(code: String, isCurrentlyUsed: Boolean) {

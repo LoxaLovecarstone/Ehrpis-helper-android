@@ -17,4 +17,7 @@ interface UsedCouponDao {
 
     @Query("DELETE FROM used_coupon_codes WHERE code = :code")
     suspend fun delete(code: String)
+
+    @Query("DELETE FROM used_coupon_codes")
+    suspend fun deleteAll()
 }

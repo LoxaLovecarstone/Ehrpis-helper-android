@@ -21,4 +21,8 @@ class UsedCouponRepositoryImpl @Inject constructor(
     override suspend fun markAsUnused(code: String) {
         dao.delete(code)
     }
+
+    override suspend fun clearAll() {
+        dao.deleteAll()
+    }
 }
