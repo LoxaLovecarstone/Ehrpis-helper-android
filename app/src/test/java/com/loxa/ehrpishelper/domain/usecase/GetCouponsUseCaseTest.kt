@@ -34,7 +34,8 @@ class GetCouponsUseCaseTest {
                 expiryEnd = "2026-04-30 23:59",
                 link = "https://example.com",
                 createdDate = "2026-04-01",
-                isExpired = false
+                isExpired = false,
+                isNew = false
             )
         )
         every { couponRepository.getCoupons() } returns flowOf(coupons)

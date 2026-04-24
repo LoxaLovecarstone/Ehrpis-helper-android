@@ -93,7 +93,7 @@ coupons: array[string]
 expiry_start: string ("2026-04-06")
 expiry_end: string ("2026-04-08 23:59")
 link: string
-created_date: string
+created_date: string ("20260205123031", yyyyMMddHHmmss 형식)
 notified: bool
 ```
 

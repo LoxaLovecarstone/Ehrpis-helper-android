@@ -278,6 +278,20 @@ private fun CouponCard(
                 textDecoration = strikethrough,
                 modifier = Modifier.weight(1f)
             )
+            if (coupon.isNew && !coupon.isExpired) {
+                Text(
+                    text = "NEW",
+                    color = MaterialTheme.colorScheme.onPrimary,
+                    fontSize = 11.sp,
+                    fontWeight = FontWeight.Bold,
+                    modifier = Modifier
+                        .background(
+                            color = MaterialTheme.colorScheme.primary,
+                            shape = RoundedCornerShape(4.dp)
+                        )
+                        .padding(horizontal = 6.dp, vertical = 2.dp)
+                )
+            }
             if (coupon.isExpired) {
                 Text(text = "만료", color = Color.Gray, fontSize = 12.sp)
             }

@@ -6,11 +6,18 @@ import com.loxa.ehrpishelper.domain.repository.CouponRepository
 import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.callbackFlow
+import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.ZoneId
 import java.time.ZonedDateTime
 import java.time.format.DateTimeFormatter
+import java.time.temporal.ChronoUnit
 import javax.inject.Inject
+
+private val SEOUL_ZONE = ZoneId.of("Asia/Seoul")
+private val EXPIRY_FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm")
+private val DATE_FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd")
+private const val NEW_THRESHOLD_DAYS = 1L
 
 class CouponRepositoryImpl @Inject constructor(
     private val firestore: FirebaseFirestore
@@ -25,15 +32,23 @@ class CouponRepositoryImpl @Inject constructor(
                     return@addSnapshotListener
                 }
 
-                val seoulZone = ZoneId.of("Asia/Seoul")
-                val now = ZonedDateTime.now(seoulZone)
-                val formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm")
+                val now = ZonedDateTime.now(SEOUL_ZONE)
+                val today = LocalDate.now(SEOUL_ZONE)
 
                 val coupons = snapshot.documents.mapNotNull { doc ->
                     runCatching {
                         val expiryEnd = doc.getString("expiry_end") ?: ""
+                        val expiryStart = doc.getString("expiry_start") ?: ""
+
                         val isExpired = if (expiryEnd.isEmpty()) false else try {
-                            LocalDateTime.parse(expiryEnd, formatter).atZone(seoulZone).isBefore(now)
+                            LocalDateTime.parse(expiryEnd, EXPIRY_FORMATTER).atZone(SEOUL_ZONE).isBefore(now)
+                        } catch (e: Exception) {
+                            false
+                        }
+
+                        val isNew = try {
+                            val started = LocalDate.parse(expiryStart, DATE_FORMATTER)
+                            ChronoUnit.DAYS.between(started, today) <= NEW_THRESHOLD_DAYS
                         } catch (e: Exception) {
                             false
                         }
@@ -43,11 +58,12 @@ class CouponRepositoryImpl @Inject constructor(
                             feedId = (doc.getLong("feed_id") ?: 0L).toInt(),
                             title = doc.getString("title") ?: "",
                             codes = (doc.get("coupons") as? List<String>) ?: emptyList(),
-                            expiryStart = doc.getString("expiry_start") ?: "",
+                            expiryStart = expiryStart,
                             expiryEnd = expiryEnd,
                             link = doc.getString("link") ?: "",
                             createdDate = doc.getString("created_date") ?: "",
                             isExpired = isExpired,
+                            isNew = isNew,
                         )
                     }.getOrNull()
                 }

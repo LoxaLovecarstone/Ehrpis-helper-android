@@ -45,7 +45,8 @@ class CouponViewModelTest {
         expiryEnd = "2026-04-30 23:59",
         link = "https://example.com",
         createdDate = "2026-04-01",
-        isExpired = false
+        isExpired = false,
+        isNew = false
     )
 
     private val expiredCoupon = Coupon(
@@ -56,7 +57,8 @@ class CouponViewModelTest {
         expiryEnd = "2026-03-31 23:59",
         link = "https://example.com",
         createdDate = "2026-03-01",
-        isExpired = true
+        isExpired = true,
+        isNew = false
     )
 
     @Before
@@ -167,7 +169,8 @@ class CouponViewModelTest {
             expiryEnd = "",
             link = "https://example.com",
             createdDate = "2026-04-01",
-            isExpired = false
+            isExpired = false,
+            isNew = false
         )
         val viewModel = createViewModel()
 
