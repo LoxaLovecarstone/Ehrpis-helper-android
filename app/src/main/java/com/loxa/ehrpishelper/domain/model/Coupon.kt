@@ -8,6 +8,5 @@ data class Coupon(
     val expiryEnd: String,
     val link: String,
     val createdDate: String,
-    val isExpired: Boolean,
     val isNew: Boolean,
 )

@@ -50,13 +50,11 @@ class CouponViewModel @Inject constructor(
                 ) { coupons, usedCodes, filter ->
                     fun Coupon.allUsed() = codes.isNotEmpty() && codes.all { it in usedCodes }
 
-                    val (expired, active) = coupons.partition { it.isExpired }
-                    val (activeUsed, activeNotUsed) = active.partition { it.allUsed() }
+                    val (used, active) = coupons.partition { it.allUsed() }
 
                     CouponUiState.Success(
-                        activeCoupons = activeNotUsed.sortedBy { it.expiryEnd.toExpiryDateTime() },
-                        usedCoupons = activeUsed.sortedBy { it.expiryEnd.toExpiryDateTime() },
-                        expiredCoupons = expired.sortedBy { it.expiryEnd.toExpiryDateTime() },
+                        activeCoupons = active.sortedBy { it.expiryEnd.toExpiryDateTime() },
+                        usedCoupons = used.sortedBy { it.expiryEnd.toExpiryDateTime() },
                         usedCodes = usedCodes,
                         selectedFilter = filter
                     )

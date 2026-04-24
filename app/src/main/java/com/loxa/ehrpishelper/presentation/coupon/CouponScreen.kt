@@ -99,9 +99,7 @@ fun CouponScreen(
         }
 
         is CouponUiState.Success -> {
-            val hasAnyCoupon = state.activeCoupons.isNotEmpty()
-                    || state.usedCoupons.isNotEmpty()
-                    || state.expiredCoupons.isNotEmpty()
+            val hasAnyCoupon = state.activeCoupons.isNotEmpty() || state.usedCoupons.isNotEmpty()
 
             if (!hasAnyCoupon) {
                 Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
@@ -127,7 +125,6 @@ fun CouponScreen(
                         CouponFilter.ALL -> state.activeCoupons.isEmpty() && state.usedCoupons.isEmpty()
                         CouponFilter.AVAILABLE -> state.activeCoupons.isEmpty()
                         CouponFilter.USED -> state.usedCoupons.isEmpty()
-                        CouponFilter.EXPIRED -> state.expiredCoupons.isEmpty()
                     }
 
                     if (isFilteredEmpty) {
@@ -187,17 +184,6 @@ fun CouponScreen(
                                         )
                                     }
                                 }
-
-                                CouponFilter.EXPIRED -> {
-                                    items(state.expiredCoupons, key = { it.feedId }) { coupon ->
-                                        CouponCard(
-                                            coupon = coupon,
-                                            usedCodes = state.usedCodes,
-                                            onToggleUsage = null,
-                                            onCopy = null
-                                        )
-                                    }
-                                }
                             }
 
                             item { Spacer(Modifier.height(8.dp)) }
@@ -247,7 +233,6 @@ private fun CouponFilterChips(
         CouponFilter.ALL to "전체",
         CouponFilter.AVAILABLE to "사용 가능",
         CouponFilter.USED to "사용완료",
-        CouponFilter.EXPIRED to "만료",
     )
     Row(
         modifier = modifier.horizontalScroll(rememberScrollState()),
@@ -284,16 +269,13 @@ private fun CouponCard(
     onCopy: ((String) -> Unit)?
 ) {
     val isAnyCodeUsed = coupon.codes.any { it in usedCodes }
-    val isVisualDimmed = coupon.isExpired || isAnyCodeUsed
-    val isVisualStrikethrough = coupon.isExpired || isAnyCodeUsed
-
-    val strikethrough = if (isVisualStrikethrough) TextDecoration.LineThrough else TextDecoration.None
-    val contentColor = if (isVisualDimmed) Color.Gray else MaterialTheme.colorScheme.onSurface
+    val strikethrough = if (isAnyCodeUsed) TextDecoration.LineThrough else TextDecoration.None
+    val contentColor = if (isAnyCodeUsed) Color.Gray else MaterialTheme.colorScheme.onSurface
 
     Column(
         modifier = Modifier
             .fillMaxWidth()
-            .alpha(if (isVisualDimmed) 0.5f else 1f)
+            .alpha(if (isAnyCodeUsed) 0.5f else 1f)
             .background(
                 color = MaterialTheme.colorScheme.surfaceVariant,
                 shape = RoundedCornerShape(12.dp)
@@ -313,7 +295,7 @@ private fun CouponCard(
                 textDecoration = strikethrough,
                 modifier = Modifier.weight(1f)
             )
-            if (coupon.isNew && !coupon.isExpired) {
+            if (coupon.isNew) {
                 Text(
                     text = "NEW",
                     color = MaterialTheme.colorScheme.onPrimary,
@@ -326,9 +308,6 @@ private fun CouponCard(
                         )
                         .padding(horizontal = 6.dp, vertical = 2.dp)
                 )
-            }
-            if (coupon.isExpired) {
-                Text(text = "만료", color = Color.Gray, fontSize = 12.sp)
             }
         }
 
@@ -344,7 +323,7 @@ private fun CouponCard(
             Spacer(Modifier.height(12.dp))
             coupon.codes.forEach { code ->
                 val isUsed = code in usedCodes
-                val effectiveCopyAction = if (isVisualStrikethrough || isUsed) null else {
+                val effectiveCopyAction = if (isAnyCodeUsed || isUsed) null else {
                     onCopy?.let { copyFunc -> { copyFunc(code) } }
                 }
                 CouponCodeChip(

@@ -4,5 +4,4 @@ enum class CouponFilter {
     ALL,
     AVAILABLE,
     USED,
-    EXPIRED
 }
