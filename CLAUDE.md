@@ -65,6 +65,12 @@ fcm/EhrpisMessagingService.kt
 3. 캐릭터 상세 화면
 4. 딜 계산기
 
+### 쿠폰 화면 추가 기능 (→ 상세: `docs/coupon-features.md`)
+- NEW 배지: 최근 24시간 이내 추가된 쿠폰 표시
+- 전체 리세마라 해제: 사용완료 코드 일괄 초기화
+- 오늘 마감 알림: WorkManager 기반 만료 임박 로컬 푸시
+- 오팔/그림자 필터: Firestore에 `reward_types` 필드 추가 후 리세마라용 필터칩
+
 ## FCM Data Payload 구조
 ```json
 {
