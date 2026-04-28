@@ -1,6 +1,6 @@
-# 에르피스 헬퍼 (Ehrpis Helper)
+# 에르피스 도우미 (Ehrpis Helper)
 
-에르피스 모바일 게임의 쿠폰 정보를 실시간으로 알려주는 안드로이드 앱입니다.
+모바일 게임 "에르피스"의 쿠폰 정보를 실시간으로 알려주는 안드로이드 앱입니다.
 
 [<img src="https://play.google.com/intl/en_us/badges/static/images/badges/ko_badge_web_generic.png" height="60">](https://play.google.com/store/apps/details?id=com.loxa.ehrpishelper)
 
