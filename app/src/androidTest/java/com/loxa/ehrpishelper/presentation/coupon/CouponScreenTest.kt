@@ -67,6 +67,7 @@ class CouponScreenTest {
         override fun getUsedCodes(): Flow<Set<String>> = flowOf(emptySet())
         override suspend fun markAsUsed(code: String) {}
         override suspend fun markAsUnused(code: String) {}
+        override suspend fun clearAll() {}
     }
 
     @Before
@@ -85,7 +86,7 @@ class CouponScreenTest {
                 expiryEnd = "",
                 link = "https://example.com",
                 createdDate = "2026-04-01",
-                isExpired = false
+                isNew = false
             )
         )
 
@@ -110,7 +111,7 @@ class CouponScreenTest {
                 expiryEnd = expiryEnd,
                 link = "https://example.com",
                 createdDate = "2026-04-01",
-                isExpired = false
+                isNew = false
             )
         )
 
