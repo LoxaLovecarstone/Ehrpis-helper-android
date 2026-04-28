@@ -93,23 +93,30 @@ fcm/  EhrpisMessagingService
 
 <br>
 
-## FCM 데이터 페이로드
+## FCM 메시지 구조
 
 ```json
 {
-  "route": "coupon_list",
-  "click_action": "OPEN_COUPON_LIST",
-  "feed_id": "7508947",
-  "coupons": "GIFTS0406",
-  "expiry_end": "2026-04-08 23:59",
-  "reward_types": "[\"오팔\", \"기적의 그림자\"]",
-  "link": "https://game.naver.com/lounge/Ehrpis/board/detail/7508947"
+  "notification": {
+    "title": "🎫 새 쿠폰 도착!",
+    "body": "GIFTS0406 | 2026-04-08 23:59까지"
+  },
+  "data": {
+    "route": "coupon_list",
+    "feed_id": "7508947",
+    "coupons": "GIFTS0406,GIFTS0407",
+    "expiry_end": "2026-04-08 23:59",
+    "link": "https://game.naver.com/lounge/Ehrpis/board/detail/7508947"
+  },
+  "topic": "coupons",
+  "android": {
+    "priority": "high",
+    "notification": { "click_action": "OPEN_COUPON_LIST" }
+  }
 }
 ```
 
-`reward_types`는 복수 항목이 가능한 JSON 배열을 직렬화한 문자열입니다. 가능한 값: `오팔` / `기적의 그림자` / `운명의 그림자` / `기타`
-
-FCM 토픽: `coupons`
+- `coupons`: 쉼표 구분 문자열 (복수 코드 가능)
 
 <br>
 
