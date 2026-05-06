@@ -21,6 +21,10 @@
             </intent-filter>
         </service>
 
+        <receiver
+            android:name=".fcm.CopyCouponReceiver"
+            android:exported="false" />
+
         <activity
             android:name=".MainActivity"
             android:exported="true"

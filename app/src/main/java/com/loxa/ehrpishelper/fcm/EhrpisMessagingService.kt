@@ -3,6 +3,7 @@ package com.loxa.ehrpishelper.fcm
 import android.app.NotificationManager
 import android.app.PendingIntent
 import android.content.Intent
+import android.graphics.BitmapFactory
 import androidx.core.app.NotificationCompat
 import com.google.firebase.messaging.FirebaseMessagingService
 import com.google.firebase.messaging.RemoteMessage
@@ -36,25 +37,48 @@ class EhrpisMessagingService : FirebaseMessagingService() {
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
         )
 
-        val largeBitmap = android.graphics.BitmapFactory.decodeResource(resources, R.mipmap.ic_launcher)
+        val largeBitmap = BitmapFactory.decodeResource(resources, R.mipmap.ic_launcher)
 
-        val notification = NotificationCompat.Builder(this, CHANNEL_ID)
+        val builder = NotificationCompat.Builder(this, CHANNEL_ID)
             .setSmallIcon(R.mipmap.ic_launcher)
             .setLargeIcon(largeBitmap)
             .setContentTitle(title)
             .setContentText(body)
-            // 아래 설정을 추가해야 포그라운드에서도 헤드업이 뜰 확률이 높아짐
             .setPriority(NotificationCompat.PRIORITY_HIGH)
             .setDefaults(NotificationCompat.DEFAULT_ALL)
             .setAutoCancel(true)
             .setContentIntent(pendingIntent)
-            .build()
+
+        val couponCodes = data["coupons"]
+            ?.split(" ", ",")
+            ?.filter { it.isNotBlank() }
+            ?: emptyList()
+
+        couponCodes.take(3).forEachIndexed { index, code ->
+            val copyIntent = Intent(this, CopyCouponReceiver::class.java).apply {
+                putExtra(CopyCouponReceiver.EXTRA_COUPON_CODE, code)
+                putExtra(CopyCouponReceiver.EXTRA_NOTIFICATION_ID, COUPON_NOTIFICATION_ID)
+            }
+            val copyPendingIntent = PendingIntent.getBroadcast(
+                this,
+                REQUEST_CODE_COPY_BASE + index,
+                copyIntent,
+                PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+            )
+            val label = if (couponCodes.size == 1) "복사" else "$code 복사"
+            builder.addAction(0, label, copyPendingIntent)
+        }
 
         val manager = getSystemService(NotificationManager::class.java)
-        manager.notify(System.currentTimeMillis().toInt(), notification)
+        manager.notify(COUPON_NOTIFICATION_ID, builder.build())
     }
 
     override fun onNewToken(token: String) {
         // 필요 시 서버에 토큰 전송 (현재는 토픽 구독 방식이라 불필요)
+    }
+
+    companion object {
+        private const val COUPON_NOTIFICATION_ID = 1001
+        private const val REQUEST_CODE_COPY_BASE = 100
     }
 }
