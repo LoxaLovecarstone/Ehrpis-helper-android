@@ -9,8 +9,8 @@ import android.os.Build
 import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
@@ -31,15 +31,19 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.outlined.CheckCircle
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilterChip
+import androidx.compose.material3.FilterChipDefaults
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
@@ -51,6 +55,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
+import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontFamily
@@ -250,10 +255,17 @@ private fun CouponFilterChips(
             horizontalArrangement = Arrangement.spacedBy(8.dp)
         ) {
             statusFilters.forEach { (filter, label) ->
+                val selected = selectedFilter == filter
                 FilterChip(
-                    selected = selectedFilter == filter,
+                    selected = selected,
                     onClick = { onFilterSelected(filter) },
-                    label = { Text(label) }
+                    label = { Text(label) },
+                    border = FilterChipDefaults.filterChipBorder(
+                        enabled = true,
+                        selected = selected,
+                        selectedBorderColor = MaterialTheme.colorScheme.primary,
+                        selectedBorderWidth = 1.5.dp
+                    )
                 )
             }
         }
@@ -268,16 +280,30 @@ private fun CouponFilterChips(
             modifier = Modifier.horizontalScroll(rememberScrollState()),
             horizontalArrangement = Arrangement.spacedBy(8.dp)
         ) {
+            val allSelected = selectedRewardTypes.isEmpty()
             FilterChip(
-                selected = selectedRewardTypes.isEmpty(),
+                selected = allSelected,
                 onClick = { onRewardTypeToggled(null) },
-                label = { Text("전체") }
+                label = { Text("전체") },
+                border = FilterChipDefaults.filterChipBorder(
+                    enabled = true,
+                    selected = allSelected,
+                    selectedBorderColor = MaterialTheme.colorScheme.primary,
+                    selectedBorderWidth = 1.5.dp
+                )
             )
             RewardType.entries.forEach { type ->
+                val selected = type in selectedRewardTypes
                 FilterChip(
-                    selected = type in selectedRewardTypes,
+                    selected = selected,
                     onClick = { onRewardTypeToggled(type) },
-                    label = { Text(type.displayName) }
+                    label = { Text(type.displayName) },
+                    border = FilterChipDefaults.filterChipBorder(
+                        enabled = true,
+                        selected = selected,
+                        selectedBorderColor = MaterialTheme.colorScheme.primary,
+                        selectedBorderWidth = 1.5.dp
+                    )
                 )
             }
         }
@@ -306,69 +332,73 @@ private fun CouponCard(
 ) {
     val isAnyCodeUsed = coupon.codes.any { it in usedCodes }
     val strikethrough = if (isAnyCodeUsed) TextDecoration.LineThrough else TextDecoration.None
-    val contentColor = if (isAnyCodeUsed) Color.Gray else MaterialTheme.colorScheme.onSurface
+    val contentColor = if (isAnyCodeUsed) Color.Gray else MaterialTheme.colorScheme.onSurfaceVariant
 
-    Column(
+    Card(
         modifier = Modifier
             .fillMaxWidth()
-            .alpha(if (isAnyCodeUsed) 0.5f else 1f)
-            .background(
-                color = MaterialTheme.colorScheme.surfaceVariant,
-                shape = RoundedCornerShape(12.dp)
-            )
-            .padding(16.dp)
-    ) {
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Text(
-                text = coupon.title,
-                fontWeight = FontWeight.Bold,
-                fontSize = 16.sp,
-                color = contentColor,
-                textDecoration = strikethrough,
-                modifier = Modifier.weight(1f)
-            )
-            if (coupon.isNew) {
-                Text(
-                    text = "NEW",
-                    color = MaterialTheme.colorScheme.onPrimary,
-                    fontSize = 11.sp,
-                    fontWeight = FontWeight.Bold,
-                    modifier = Modifier
-                        .background(
-                            color = MaterialTheme.colorScheme.primary,
-                            shape = RoundedCornerShape(4.dp)
-                        )
-                        .padding(horizontal = 6.dp, vertical = 2.dp)
-                )
-            }
-        }
-
-        Spacer(Modifier.height(4.dp))
-        Text(
-            text = if (coupon.expiryEnd.isEmpty()) "만료일 알 수 없음" else "~${coupon.expiryEnd}",
-            fontSize = 12.sp,
-            color = contentColor.copy(alpha = 0.7f),
-            textDecoration = strikethrough
+            .alpha(if (isAnyCodeUsed) 0.5f else 1f),
+        shape = RoundedCornerShape(16.dp),
+        elevation = CardDefaults.cardElevation(
+            defaultElevation = if (isAnyCodeUsed) 0.dp else 3.dp
+        ),
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.surfaceContainer
         )
-
-        if (coupon.codes.isNotEmpty()) {
-            Spacer(Modifier.height(12.dp))
-            coupon.codes.forEach { code ->
-                val isUsed = code in usedCodes
-                val effectiveCopyAction = if (isAnyCodeUsed || isUsed) null else {
-                    onCopy?.let { copyFunc -> { copyFunc(code) } }
-                }
-                CouponCodeChip(
-                    code = code,
-                    isUsed = isUsed,
-                    onCopy = effectiveCopyAction,
-                    onToggleUsage = onToggleUsage?.let { toggle -> { toggle(code, isUsed) } }
+    ) {
+        Column(modifier = Modifier.padding(16.dp)) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(
+                    text = coupon.title,
+                    fontWeight = FontWeight.Bold,
+                    fontSize = 16.sp,
+                    color = contentColor,
+                    textDecoration = strikethrough,
+                    modifier = Modifier.weight(1f)
                 )
-                Spacer(Modifier.height(6.dp))
+                if (coupon.isNew) {
+                    Text(
+                        text = "NEW",
+                        color = MaterialTheme.colorScheme.onPrimary,
+                        fontSize = 11.sp,
+                        fontWeight = FontWeight.Bold,
+                        modifier = Modifier
+                            .background(
+                                color = MaterialTheme.colorScheme.primary,
+                                shape = RoundedCornerShape(4.dp)
+                            )
+                            .padding(horizontal = 6.dp, vertical = 2.dp)
+                    )
+                }
+            }
+
+            Spacer(Modifier.height(4.dp))
+            Text(
+                text = if (coupon.expiryEnd.isEmpty()) "만료일 알 수 없음" else "~${coupon.expiryEnd}",
+                fontSize = 12.sp,
+                color = contentColor.copy(alpha = 0.7f),
+                textDecoration = strikethrough
+            )
+
+            if (coupon.codes.isNotEmpty()) {
+                Spacer(Modifier.height(12.dp))
+                coupon.codes.forEach { code ->
+                    val isUsed = code in usedCodes
+                    val effectiveCopyAction = if (isAnyCodeUsed || isUsed) null else {
+                        onCopy?.let { copyFunc -> { copyFunc(code) } }
+                    }
+                    CouponCodeChip(
+                        code = code,
+                        isUsed = isUsed,
+                        onCopy = effectiveCopyAction,
+                        onToggleUsage = onToggleUsage?.let { toggle -> { toggle(code, isUsed) } }
+                    )
+                    Spacer(Modifier.height(6.dp))
+                }
             }
         }
     }
@@ -383,46 +413,42 @@ private fun CouponCodeChip(
 ) {
     val isActive = onCopy != null && !isUsed
 
-    val background = if (isUsed)
-        MaterialTheme.colorScheme.primary.copy(alpha = 0.08f)
-    else
-        Color.Transparent
-
-    val borderColor = if (isActive) MaterialTheme.colorScheme.primary else Color.Gray.copy(alpha = 0.4f)
-    val textColor = if (isActive) MaterialTheme.colorScheme.primary else Color.Gray
-
-    Row(
+    Surface(
         modifier = Modifier
             .fillMaxWidth()
-            .background(color = background, shape = RoundedCornerShape(8.dp))
-            .border(width = 1.dp, color = borderColor, shape = RoundedCornerShape(8.dp))
-            .then(
-                if (onCopy != null) Modifier.clickable(onClick = onCopy)
-                else Modifier
-            )
-            .padding(start = 12.dp, end = 4.dp, top = 8.dp, bottom = 8.dp),
-        verticalAlignment = Alignment.CenterVertically
+            .then(if (isActive) Modifier.clickable(onClick = onCopy!!) else Modifier),
+        shape = RoundedCornerShape(10.dp),
+        color = if (isActive) MaterialTheme.colorScheme.primaryContainer else Color.Transparent,
+        contentColor = if (isActive) MaterialTheme.colorScheme.onPrimaryContainer else Color.Gray,
+        shadowElevation = if (isActive) 4.dp else 0.dp,
+        border = if (isActive)
+            BorderStroke(1.5.dp, MaterialTheme.colorScheme.primary)
+        else
+            BorderStroke(1.dp, Color.Gray.copy(alpha = 0.3f))
     ) {
-        Text(
-            text = code,
-            fontFamily = FontFamily.Monospace,
-            fontWeight = FontWeight.SemiBold,
-            fontSize = 15.sp,
-            color = textColor,
-            textDecoration = TextDecoration.None,
-            modifier = Modifier.weight(1f)
-        )
-        if (onToggleUsage != null) {
-            IconButton(
-                onClick = onToggleUsage,
-                modifier = Modifier.size(36.dp)
-            ) {
-                Icon(
-                    imageVector = if (isUsed) Icons.Filled.CheckCircle else Icons.Outlined.CheckCircle,
-                    contentDescription = if (isUsed) "사용 완료" else "사용 전",
-                    tint = if (isUsed) MaterialTheme.colorScheme.primary else Color.Gray,
-                    modifier = Modifier.size(20.dp)
-                )
+        Row(
+            modifier = Modifier.padding(start = 12.dp, end = 4.dp, top = 10.dp, bottom = 10.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Text(
+                text = code,
+                fontFamily = FontFamily.Monospace,
+                fontWeight = FontWeight.SemiBold,
+                fontSize = 15.sp,
+                modifier = Modifier.weight(1f)
+            )
+            if (onToggleUsage != null) {
+                IconButton(
+                    onClick = onToggleUsage,
+                    modifier = Modifier.size(36.dp)
+                ) {
+                    Icon(
+                        imageVector = if (isUsed) Icons.Filled.CheckCircle else Icons.Outlined.CheckCircle,
+                        contentDescription = null,
+                        tint = if (isUsed) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.5f),
+                        modifier = Modifier.size(20.dp)
+                    )
+                }
             }
         }
     }
