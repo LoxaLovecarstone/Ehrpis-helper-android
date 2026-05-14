@@ -20,7 +20,7 @@
 
 | 쿠폰 목록                                                 | 필터                                            |
 |-------------------------------------------------------|-----------------------------------------------|
-| ![쿠폰 목록](docs/screenshots/screenshot_coupon_list.jpg) | ![필터](docs/screenshots/screenshot_filter.jpg) |
+| ![쿠폰 목록](docs/screenshots/screenshot_coupon_list.png) | ![필터](docs/screenshots/screenshot_filter.png) |
 
 <br>
 
