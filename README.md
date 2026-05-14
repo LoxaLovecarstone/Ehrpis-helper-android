@@ -36,8 +36,6 @@
 | 로컬 DB | Room |
 | 리모트 DB | Firebase Firestore (callbackFlow 실시간 구독) |
 | 푸시 알림 | Firebase Cloud Messaging (FCM) |
-| 이미지 | Coil |
-| 네비게이션 | Compose Navigation + kotlinx.serialization (type-safe routes) |
 
 <br>
 
@@ -97,11 +95,9 @@ fcm/  EhrpisMessagingService
 
 ```json
 {
-  "notification": {
-    "title": "🎫 새 쿠폰 도착!",
-    "body": "GIFTS0406 | 2026-04-08 23:59까지"
-  },
   "data": {
+    "title": "🎫 새 쿠폰 도착!",
+    "body": "GIFTS0406, GIFTS0407  |  2026-04-08 23:59까지",
     "route": "coupon_list",
     "feed_id": "7508947",
     "coupons": "GIFTS0406,GIFTS0407",
@@ -110,12 +106,12 @@ fcm/  EhrpisMessagingService
   },
   "topic": "coupons",
   "android": {
-    "priority": "high",
-    "notification": { "click_action": "OPEN_COUPON_LIST" }
+    "priority": "high"
   }
 }
 ```
 
+- data-only 메시지 (notification 블록 없음) — 앱이 포그라운드/백그라운드 모두 `onMessageReceived`에서 직접 처리
 - `coupons`: 쉼표 구분 문자열 (복수 코드 가능)
 
 <br>
