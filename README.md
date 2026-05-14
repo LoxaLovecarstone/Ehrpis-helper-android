@@ -54,7 +54,7 @@ presentation/
 domain/
   model/Coupon.kt
   repository/             ← 인터페이스
-  usecase/                ← GetCoupons / ToggleUsage / ClearAll
+  usecase/                ← GetCoupons / MarkAsUsed / MarkAsUnused / ClearAll
 
 data/
   repository/
@@ -65,7 +65,7 @@ data/
     db/AppDatabase.kt
 
 di/   DatabaseModule, FirebaseModule, RepositoryModule
-fcm/  EhrpisMessagingService
+fcm/  EhrpisMessagingService, CopyCouponReceiver
 ```
 
 <br>
