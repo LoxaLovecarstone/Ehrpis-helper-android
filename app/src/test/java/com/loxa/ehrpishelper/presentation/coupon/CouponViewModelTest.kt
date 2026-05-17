@@ -45,7 +45,7 @@ class CouponViewModelTest {
         expiryStart = "2026-04-01",
         expiryEnd = "2026-04-30 23:59",
         link = "https://example.com",
-        createdDate = "2026-04-01",
+        createdDate = "20260401000000",
         isNew = false
     )
 
@@ -56,7 +56,7 @@ class CouponViewModelTest {
         expiryStart = "2026-04-01",
         expiryEnd = "2026-04-20 23:59",
         link = "https://example.com",
-        createdDate = "2026-04-01",
+        createdDate = "20260401000000",
         isNew = false
     )
 
@@ -264,5 +264,191 @@ class CouponViewModelTest {
         testDispatcher.scheduler.advanceUntilIdle()
 
         coVerify(exactly = 1) { markCouponAsUnusedUseCase("CODE1") }
+    }
+
+    // ── 정렬 ──────────────────────────────────────────────
+
+    @Test
+    fun `기본 정렬 상태는 만료일순이다`() = runTest {
+        val viewModel = createViewModel()
+
+        viewModel.uiState.test {
+            awaitItem() // Loading
+
+            couponsFlow.value = listOf(coupon1)
+            testDispatcher.scheduler.advanceUntilIdle()
+
+            val state = awaitItem() as CouponUiState.Success
+            assertEquals(SortOrder.EXPIRY, state.selectedSortOrder)
+
+            cancelAndIgnoreRemainingEvents()
+        }
+    }
+
+    @Test
+    fun `setSortOrder 호출 시 selectedSortOrder가 UiState에 반영된다`() = runTest {
+        val viewModel = createViewModel()
+
+        viewModel.uiState.test {
+            awaitItem() // Loading
+            testDispatcher.scheduler.advanceUntilIdle()
+            awaitItem() // Success (기본 EXPIRY)
+
+            viewModel.setSortOrder(SortOrder.CREATED)
+            testDispatcher.scheduler.advanceUntilIdle()
+
+            val state = awaitItem() as CouponUiState.Success
+            assertEquals(SortOrder.CREATED, state.selectedSortOrder)
+
+            cancelAndIgnoreRemainingEvents()
+        }
+    }
+
+    @Test
+    fun `등록일순 정렬 시 최근 등록된 쿠폰이 먼저 온다`() = runTest {
+        val older = coupon1.copy(feedId = 10, createdDate = "20260401000000")
+        val newer = coupon1.copy(feedId = 11, createdDate = "20260410000000")
+        val viewModel = createViewModel()
+
+        viewModel.uiState.test {
+            awaitItem() // Loading
+
+            couponsFlow.value = listOf(older, newer)
+            testDispatcher.scheduler.advanceUntilIdle()
+            awaitItem() // Success (EXPIRY 정렬)
+
+            viewModel.setSortOrder(SortOrder.CREATED)
+            testDispatcher.scheduler.advanceUntilIdle()
+
+            val state = awaitItem() as CouponUiState.Success
+            assertEquals(newer, state.activeCoupons[0])
+            assertEquals(older, state.activeCoupons[1])
+
+            cancelAndIgnoreRemainingEvents()
+        }
+    }
+
+    // ── 사용 처리 ──────────────────────────────────────────
+
+    @Test
+    fun `코드 일부만 사용된 쿠폰은 activeCoupons에 남는다`() = runTest {
+        couponsFlow.value = listOf(coupon1) // codes = [CODE1, CODE2]
+        usedCodesFlow.value = setOf("CODE1") // CODE2는 미사용
+
+        val viewModel = createViewModel()
+
+        viewModel.uiState.test {
+            awaitItem() // Loading
+            testDispatcher.scheduler.advanceUntilIdle()
+
+            val state = awaitItem() as CouponUiState.Success
+            assertEquals(listOf(coupon1), state.activeCoupons)
+            assertTrue(state.usedCoupons.isEmpty())
+
+            cancelAndIgnoreRemainingEvents()
+        }
+    }
+
+    @Test
+    fun `clearAllUsed 호출 시 ClearAllUsedCodesUseCase를 호출한다`() = runTest {
+        coJustRun { clearAllUsedCodesUseCase() }
+        val viewModel = createViewModel()
+        testDispatcher.scheduler.advanceUntilIdle()
+
+        viewModel.clearAllUsed()
+        testDispatcher.scheduler.advanceUntilIdle()
+
+        coVerify(exactly = 1) { clearAllUsedCodesUseCase() }
+    }
+
+    // ── 보상 타입 필터 ────────────────────────────────────
+
+    @Test
+    fun `toggleRewardType 호출 시 selectedRewardTypes에 추가된다`() = runTest {
+        val viewModel = createViewModel()
+
+        viewModel.uiState.test {
+            awaitItem() // Loading
+            testDispatcher.scheduler.advanceUntilIdle()
+            awaitItem() // Success (필터 없음)
+
+            viewModel.toggleRewardType(RewardType.OPAL)
+            testDispatcher.scheduler.advanceUntilIdle()
+
+            val state = awaitItem() as CouponUiState.Success
+            assertEquals(setOf(RewardType.OPAL), state.selectedRewardTypes)
+
+            cancelAndIgnoreRemainingEvents()
+        }
+    }
+
+    @Test
+    fun `이미 선택된 rewardType을 다시 누르면 해제된다`() = runTest {
+        val viewModel = createViewModel()
+
+        viewModel.uiState.test {
+            awaitItem() // Loading
+            testDispatcher.scheduler.advanceUntilIdle()
+            awaitItem() // Success
+
+            viewModel.toggleRewardType(RewardType.OPAL)
+            testDispatcher.scheduler.advanceUntilIdle()
+            awaitItem() // OPAL 추가됨
+
+            viewModel.toggleRewardType(RewardType.OPAL)
+            testDispatcher.scheduler.advanceUntilIdle()
+
+            val state = awaitItem() as CouponUiState.Success
+            assertTrue(state.selectedRewardTypes.isEmpty())
+
+            cancelAndIgnoreRemainingEvents()
+        }
+    }
+
+    @Test
+    fun `toggleRewardType에 null 전달 시 필터가 전체 초기화된다`() = runTest {
+        val viewModel = createViewModel()
+
+        viewModel.uiState.test {
+            awaitItem() // Loading
+            testDispatcher.scheduler.advanceUntilIdle()
+            awaitItem() // Success
+
+            viewModel.toggleRewardType(RewardType.OPAL)
+            testDispatcher.scheduler.advanceUntilIdle()
+            awaitItem() // OPAL 추가됨
+
+            viewModel.toggleRewardType(null)
+            testDispatcher.scheduler.advanceUntilIdle()
+
+            val state = awaitItem() as CouponUiState.Success
+            assertTrue(state.selectedRewardTypes.isEmpty())
+
+            cancelAndIgnoreRemainingEvents()
+        }
+    }
+
+    @Test
+    fun `rewardType 필터 적용 시 해당 타입 쿠폰만 남는다`() = runTest {
+        val opalCoupon = coupon1.copy(feedId = 10, rewardTypes = listOf("오팔"))
+        val shadowCoupon = coupon1.copy(feedId = 11, rewardTypes = listOf("기적의 그림자"))
+        couponsFlow.value = listOf(opalCoupon, shadowCoupon)
+
+        val viewModel = createViewModel()
+
+        viewModel.uiState.test {
+            awaitItem() // Loading
+            testDispatcher.scheduler.advanceUntilIdle()
+            awaitItem() // Success (전체 2개)
+
+            viewModel.toggleRewardType(RewardType.OPAL)
+            testDispatcher.scheduler.advanceUntilIdle()
+
+            val state = awaitItem() as CouponUiState.Success
+            assertEquals(1, state.activeCoupons.size)
+            assertEquals(opalCoupon, state.activeCoupons[0])
+
+            cancelAndIgnoreRemainingEvents()
+        }
     }
 }
