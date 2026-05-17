@@ -10,6 +10,7 @@ sealed interface CouponUiState {
         val usedCodes: Set<String>,
         val selectedFilter: CouponFilter,
         val selectedRewardTypes: Set<RewardType>,
+        val selectedSortOrder: SortOrder,
     ) : CouponUiState
     data class Error(val message: String) : CouponUiState
 }

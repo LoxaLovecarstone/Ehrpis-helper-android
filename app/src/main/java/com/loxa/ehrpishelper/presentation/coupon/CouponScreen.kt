@@ -125,6 +125,8 @@ fun CouponScreen(
                         onFilterSelected = { viewModel.setFilter(it) },
                         selectedRewardTypes = state.selectedRewardTypes,
                         onRewardTypeToggled = { viewModel.toggleRewardType(it) },
+                        selectedSortOrder = state.selectedSortOrder,
+                        onSortOrderSelected = { viewModel.setSortOrder(it) },
                         modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)
                     )
 
@@ -236,6 +238,8 @@ private fun CouponFilterChips(
     onFilterSelected: (CouponFilter) -> Unit,
     selectedRewardTypes: Set<RewardType>,
     onRewardTypeToggled: (RewardType?) -> Unit,
+    selectedSortOrder: SortOrder,
+    onSortOrderSelected: (SortOrder) -> Unit,
     modifier: Modifier = Modifier
 ) {
     val statusFilters = listOf(
@@ -244,6 +248,32 @@ private fun CouponFilterChips(
         CouponFilter.USED to "사용 완료",
     )
     Column(modifier = modifier) {
+        Text(
+            text = "정렬",
+            fontSize = 11.sp,
+            color = Color.Gray,
+            modifier = Modifier.padding(start = 4.dp, bottom = 2.dp)
+        )
+        Row(
+            modifier = Modifier.horizontalScroll(rememberScrollState()),
+            horizontalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            SortOrder.entries.forEach { order ->
+                val selected = selectedSortOrder == order
+                FilterChip(
+                    selected = selected,
+                    onClick = { onSortOrderSelected(order) },
+                    label = { Text(order.displayName) },
+                    border = FilterChipDefaults.filterChipBorder(
+                        enabled = true,
+                        selected = selected,
+                        selectedBorderColor = MaterialTheme.colorScheme.primary,
+                        selectedBorderWidth = 1.5.dp
+                    )
+                )
+            }
+        }
+        Spacer(Modifier.height(6.dp))
         Text(
             text = "상태",
             fontSize = 11.sp,

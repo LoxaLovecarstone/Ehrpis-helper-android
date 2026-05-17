@@ -41,6 +41,7 @@ class CouponViewModel @Inject constructor(
 
     private val _selectedFilter = MutableStateFlow(CouponFilter.ALL)
     private val _selectedRewardTypes = MutableStateFlow<Set<RewardType>>(emptySet())
+    private val _selectedSortOrder = MutableStateFlow(SortOrder.EXPIRY)
 
     init {
         viewModelScope.launch {
@@ -50,8 +51,14 @@ class CouponViewModel @Inject constructor(
                     getUsedCodesUseCase(),
                     _selectedFilter,
                     _selectedRewardTypes,
-                ) { coupons, usedCodes, filter, rewardTypes ->
+                    _selectedSortOrder,
+                ) { coupons, usedCodes, filter, rewardTypes, sortOrder ->
                     fun Coupon.allUsed() = codes.isNotEmpty() && codes.all { it in usedCodes }
+
+                    fun List<Coupon>.applySortOrder() = when (sortOrder) {
+                        SortOrder.EXPIRY -> sortedBy { it.expiryEnd.toExpiryDateTime() }
+                        SortOrder.CREATED -> sortedByDescending { it.createdDate }
+                    }
 
                     val rewardFiltered = if (rewardTypes.isEmpty()) coupons
                     else coupons.filter { coupon ->
@@ -60,11 +67,12 @@ class CouponViewModel @Inject constructor(
                     val (used, active) = rewardFiltered.partition { it.allUsed() }
 
                     CouponUiState.Success(
-                        activeCoupons = active.sortedBy { it.expiryEnd.toExpiryDateTime() },
-                        usedCoupons = used.sortedBy { it.expiryEnd.toExpiryDateTime() },
+                        activeCoupons = active.applySortOrder(),
+                        usedCoupons = used.applySortOrder(),
                         usedCodes = usedCodes,
                         selectedFilter = filter,
                         selectedRewardTypes = rewardTypes,
+                        selectedSortOrder = sortOrder,
                     )
                 }.collect { _uiState.value = it }
             }.onFailure { e ->
@@ -75,6 +83,10 @@ class CouponViewModel @Inject constructor(
 
     fun setFilter(filter: CouponFilter) {
         _selectedFilter.value = filter
+    }
+
+    fun setSortOrder(order: SortOrder) {
+        _selectedSortOrder.value = order
     }
 
     fun toggleRewardType(type: RewardType?) {
